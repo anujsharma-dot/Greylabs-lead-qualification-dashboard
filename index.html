@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Leads-CRM-Vendor Merge Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{
+--bg:#0f1420; --panel:#161d2e; --panel2:#1d2740; --border:#2a3654;
+--text:#e8ecf6; --muted:#8b96b5; --accent:#5b8def; --accent2:#3f6bd4;
+--good:#3ecf8e; --warn:#f0a83c; --bad:#f0596e; --frost:#7fd4e8;
+--mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+box-sizing:border-box;
+padding-top:env(safe-area-inset-top,0px);
+padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{ scroll-padding-top:env(safe-area-inset-top,0px); height:100%; }
+*{box-sizing:border-box;}
+body{
+margin:0; height:100%; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-
+serif;
+background:radial-gradient(1200px 800px at 10% -10%, #1a2440 0%, var(--bg) 60%);
+background-color:var(--bg);
+color:var(--text);
+}
+.wrap{max-width:1180px; margin:0 auto; padding:0 20px 60px;}
+header{padding:28px 0 18px;}
+header h1{font-size:22px; margin:0 0 6px; letter-spacing:-0.02em;}
+header p{color:var(--muted); margin:0; font-size:14px;}
+.snapshot-status{
+margin-top:12px !important; display:inline-flex; align-items:center; gap:8px;
+background:var(--panel); border:1px solid var(--border); border-radius:20px;
+padding:6px 14px; font-size:12.5px !important; color:var(--text) !important;
+}
+.snapshot-status .sdot{width:8px; height:8px; border-radius:50%; background:var(--muted);}
+.snapshot-status.live .sdot{background:var(--good);}
+.snapshot-status.empty .sdot{background:var(--warn);}
+/* ---- top nav ---- */
+.nav{
+position:sticky; top:env(safe-area-inset-top,0px); z-index:50; background:rgba(15,20,32,.92);
+backdrop-filter:blur(8px);
+border-bottom:1px solid var(--border); margin-bottom:26px;
+}
+.nav-inner{max-width:1180px; margin:0 auto; padding:0 20px; display:flex; gap:4px; overflow-
+x:auto;}
+.navtab{
+padding:14px 18px; font-size:13.5px; font-weight:600; color:var(--muted); cursor:pointer;
+border-bottom:2px solid transparent; display:flex; align-items:center; gap:7px; user-select:none;
+white-space:nowrap;
+}
+.navtab .dot{width:6px; height:6px; border-radius:50%; background:var(--border); transition:.2s;}
+.navtab.done .dot{background:var(--good);}
+.navtab:hover{color:var(--text);}
+.navtab.active{color:var(--text); border-bottom-color:var(--accent);}
+.navtab.disabled{opacity:.4; cursor:not-allowed; pointer-events:none;}
+.page{display:none;}
+.page.active{display:block;}
+.grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:20px;}
+@media (max-width:900px){.grid{grid-template-columns:1fr;}}
+.card{
+background:var(--panel); border:1px solid var(--border); border-radius:14px;
+padding:18px; position:relative; overflow:hidden;
+}
+.card h3{margin:0 0 4px; font-size:14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+.card .sub{color:var(--muted); font-size:12px; margin:0 0 14px;}
+.badge{
+font-size:10px; padding:2px 8px; border-radius:20px; background:var(--panel2);
+color:var(--muted); border:1px solid var(--border); font-weight:600; letter-spacing:.03em;
+}
+.badge.ok{background:rgba(62,207,142,.12); color:var(--good); border-color:rgba(62,207,142,.3);}
+.badge.warn{background:rgba(240,168,60,.12); color:var(--warn); border-
+color:rgba(240,168,60,.3);}
+.badge.frost{background:rgba(127,212,232,.12); color:var(--frost); border-
+color:rgba(127,212,232,.3);}
+/* ---- lock screen ---- */
+.lock-card{max-width:420px; margin:30px auto 40px; text-align:center; padding:30px 26px;}
+.lock-card .lock-icon{font-size:34px; margin-bottom:8px;}
+.lock-card h3{justify-content:center; font-size:16px; margin-bottom:6px;}
+.lock-card p{color:var(--muted); font-size:12.5px; margin:0 0 18px;}
+.lock-row{display:flex; gap:10px;}
+.lock-row input{
+flex:1; min-width:0; background:var(--panel2); color:var(--text); border:1px solid var(--border);
+border-radius:10px; padding:11px 14px; font-size:14px; font-family:inherit;
+}
+.lock-row input:focus{outline:none; border-color:var(--accent);}
+.lock-error{color:var(--bad); font-size:12.5px; margin-top:10px; min-height:18px;}
+.shake{animation:shake .35s;}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-
+6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){.shake{animation:none;}}
+.dropzone{
+border:1.5px dashed var(--border); border-radius:10px; padding:22px 14px;
+text-align:center; cursor:pointer; transition:.15s; background:var(--panel2); display:block;
+}
+.dropzone:hover, .dropzone.drag{border-color:var(--accent); background:rgba(91,141,239,.08);}
+.dropzone input{display:none;}
+.dropzone .fname{font-size:12px; color:var(--good); margin-top:8px; word-break:break-all; font-
+family:var(--mono);}
+.dropzone .hint{font-size:12px; color:var(--muted); margin-top:6px;}
+.dropzone .icon{font-size:26px; opacity:.7;}
+.colprev{margin-top:12px; font-size:11px; color:var(--muted); font-family:var(--mono); max-
+height:70px; overflow:auto; background:#0d1220; border-radius:8px; padding:8px; display:none;}
+.actions{display:flex; gap:12px; align-items:center; margin:24px 0; flex-wrap:wrap;}
+button.primary{
+background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#fff; border:none;
+padding:12px 22px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;
+box-shadow:0 4px 16px rgba(91,141,239,.35); transition:.15s;
+}
+button.primary:disabled{opacity:.4; cursor:not-allowed; box-shadow:none;}
+button.primary:not(:disabled):hover{transform:translateY(-1px); box-shadow:0 6px 20px
+rgba(91,141,239,.45);}
+button.ghost{
+background:transparent; color:var(--text); border:1px solid var(--border);
+padding:12px 20px; border-radius:10px; font-size:14px; cursor:pointer;
+}
+button.ghost:hover{border-color:var(--accent);}
+button.ghost:disabled{opacity:.35; cursor:not-allowed;}
+button.small-ghost{
+background:transparent; color:var(--muted); border:1px solid var(--border);
+padding:6px 14px; border-radius:8px; font-size:11.5px; cursor:pointer;
+}
+button.small-ghost:hover{border-color:var(--bad); color:var(--bad);}
+button:focus-visible, .navtab:focus-visible, .tab:focus-visible{outline:2px solid var(--accent); outline-
+offset:2px;}
+.progress-wrap{margin:8px 0 26px;}
+.progress-bar{height:8px; background:var(--panel2); border-radius:6px; overflow:hidden;
+border:1px solid var(--border);}
+.progress-fill{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--good));
+transition:width .25s ease;}
+.progress-label{font-size:12px; color:var(--muted); margin-top:6px; display:flex; justify-
+content:space-between;}
+.log{
+background:#0a0e18; border:1px solid var(--border); border-radius:12px; padding:14px 16px;
+font-family:var(--mono); font-size:12.5px; line-height:1.7; height:230px; overflow-y:auto;
+}
+.log .line{white-space:pre-wrap;}
+.log .t{color:#4a5578;}
+.log .ok{color:var(--good);}
+.log .warn{color:var(--warn);}
+.log .bad{color:var(--bad);}
+.log .info{color:#7fa8f2;}
+.log .frost{color:var(--frost);}
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin:0
+0 20px;}
+.stat{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:16px;}
+.stat .num{font-size:24px; font-weight:700;}
+.stat .lbl{font-size:11.5px; color:var(--muted); margin-top:2px;}
+.tabs{display:flex; gap:6px; margin:0 0 14px; flex-wrap:wrap;}
+.tab{
+padding:8px 14px; border-radius:8px; font-size:12.5px; cursor:pointer;
+background:var(--panel2); border:1px solid var(--border); color:var(--muted);
+}
+.tab.active{background:rgba(91,141,239,.15); color:var(--text); border-color:var(--accent);}
+.tableview{
+background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:auto; max-
+height:460px;
+}
+table{border-collapse:collapse; width:100%; font-size:12px;}
+th{position:sticky; top:0; background:#1a2338; text-align:left; padding:9px 10px; color:var(--
+muted); font-weight:600; border-bottom:1px solid var(--border); white-space:nowrap;}
+td{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.04); white-space:nowrap; font-
+family:var(--mono);}
+tr:hover td{background:rgba(255,255,255,.02);}
+.download-row{display:flex; gap:12px; margin:18px 0 8px; flex-wrap:wrap;}
+.note{
+background:rgba(240,168,60,.08); border:1px solid rgba(240,168,60,.3); color:#e8c079;
+padding:12px 14px; border-radius:10px; font-size:12.5px; margin:0 0 18px; display:none;
+}
+.note.frost{
+background:rgba(127,212,232,.08); border:1px solid rgba(127,212,232,.3); color:var(--frost);
+}
+.footer-note{color:var(--muted); font-size:11.5px; margin-top:30px; text-align:center;}
+.empty-state{
+text-align:center; padding:60px 20px; color:var(--muted); font-size:14px;
+}
+.empty-state .big{font-size:34px; margin-bottom:10px;}
+/* ---- insights ---- */
+.insight-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;}
+@media (max-width:900px){.insight-grid{grid-template-columns:1fr;}}
+.barlist{display:flex; flex-direction:column; gap:10px;}
+.barrow{display:grid; grid-template-columns:120px 1fr 56px; gap:10px; align-items:center; font-
+size:12px;}
+.barrow .lbl2{color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.bartrack{background:var(--panel2); border-radius:6px; height:14px; overflow:hidden; border:1px
+solid var(--border);}
+.barfill{height:100%; background:linear-gradient(90deg,var(--accent),var(--good)); border-
+radius:6px;}
+.barval{text-align:right; font-family:var(--mono); color:var(--text);}
+.insight-card h4{margin:0 0 14px; font-size:13px; color:var(--text); display:flex; align-items:center;
+gap:8px;}
+.owner-table td, .owner-table th{font-family:inherit;}
+.monthly-note{
+background:rgba(240,168,60,.08); border:1px solid rgba(240,168,60,.3); color:#e8c079;
+padding:10px 14px; border-radius:10px; font-size:12px; margin-bottom:12px;
+}
+.breakup-view td, .breakup-view th{font-family:inherit;}
+.breakup-view td.num{font-family:var(--mono); text-align:right;}
+.breakup-view th.num{text-align:right;}
+.breakup-view td.lbl{font-weight:600; color:var(--text);}
+.breakup-view tr.pct td{color:var(--muted); font-size:11.5px; border-bottom:1px solid var(--border);
+padding-top:0;}
+.breakup-view tr.top td{background:rgba(91,141,239,.05);}
+.breakup-view tr.subhead td{background:#1a2338; color:var(--muted); font-weight:700; font-
+size:11.5px;}
+.breakup-view td.notes{color:var(--muted); font-size:11.5px; white-space:normal; min-width:220px;
+line-height:1.6;}
+.breakup-view td.notes b{color:var(--text); font-weight:600;}
+.dl-btn{
+margin-left:auto; background:transparent; color:var(--muted); border:1px solid var(--border);
+padding:4px 10px; border-radius:7px; font-size:11px; font-weight:600; cursor:pointer; font-
+family:inherit; white-space:nowrap;
+}
+.dl-btn:hover{border-color:var(--accent); color:var(--text);}
+.dl-btn:disabled{opacity:.4; cursor:not-allowed;}
+.tabs .dl-btn{align-self:center;}
+.period-tableview table{font-size:12px;}
+.period-tableview th.grp{text-align:center; background:#212c48;}
+.period-tableview th.rowlbl{min-width:150px;}
+.period-tableview td.rowlbl{color:var(--text); font-weight:600; font-family:inherit;}
+.period-tableview td.total-row, .period-tableview th.total-row{background:rgba(91,141,239,.06);}
+.period-tableview .divider-col{border-left:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="nav">
+<div class="nav-inner">
+<div class="navtab active" data-page="upload" id="nav-upload"> Upload</div>
+<div class="navtab disabled" data-page="data" id="nav-data"> Data</div>
+<div class="navtab disabled" data-page="insights" id="nav-insights"> Insights</div>
+<div class="navtab disabled" data-page="periods" id="nav-periods"> Account Summary</div>
+</div>
+</div>
+<div class="wrap">
+<header>
+<h1> Leads · CRM · Vendor Merge Dashboard</h1>
+<p>Files are parsed and merged in your browser. The latest merged result is saved so the
+dashboard stays the same until new sheets are uploaded.</p>
+<p class="snapshot-status" id="snapshot-status"><span class="sdot"></span><span id="snapshot-
+text">Loading saved data…</span></p>
+</header>
+<!-- ============ PAGE 1: UPLOAD ============ -->
+<div class="page active" id="page-upload">
+<!-- Lock screen -->
+<div class="card lock-card" id="lock-card">
+<div class="lock-icon"> </div>
+<h3>Upload is password protected</h3>
+<p>Enter the password to upload new sheets and refresh the dashboard. Everyone can still view
+the Data, Insights and Account Summary tabs.</p>
+<div class="lock-row" id="lock-row">
+<input type="password" id="lock-input" placeholder="Password" autocomplete="current-
+password" aria-label="Upload password">
+<button class="primary" id="btn-unlock">Unlock</button>
+</div>
+<div class="lock-error" id="lock-error"></div>
+</div>
+<div id="upload-body" style="display:none;">
+<div class="grid">
+<div class="card" id="card-leads">
+<h3>1️⃣ Leads sheet <span class="badge" id="badge-leads">waiting</span></h3>
+<p class="sub">Needs: created_at, mobile_number</p>
+<label class="dropzone" id="drop-leads">
+<input type="file" id="file-leads" accept=".xlsx,.xls,.csv">
+<div class="icon"> </div>
+<div class="hint">Click or drop file</div>
+<div class="fname" id="fname-leads"></div>
+</label>
+<div class="colprev" id="prev-leads"></div>
+</div>
+<div class="card" id="card-crm">
+<h3>2️⃣ CRM sheet <span class="badge" id="badge-crm">waiting</span></h3>
+<p class="sub">Mobile, Lead Stage, Client Code, isDIY, Lead Owner, Bot Call Attempt, Bot Call
+Connect, Bot Remark</p>
+<label class="dropzone" id="drop-crm">
+<input type="file" id="file-crm" accept=".xlsx,.xls,.csv">
+<div class="icon"> </div>
+<div class="hint">Click or drop file</div>
+<div class="fname" id="fname-crm"></div>
+</label>
+<div class="colprev" id="prev-crm"></div>
+</div>
+<div class="card" id="card-vendor">
+<h3>3️⃣ Vendor sheet <span class="badge" id="badge-vendor">waiting</span></h3>
+<p class="sub">customer id (mobile), Total Call Duration (In Seconds), post action</p>
+<label class="dropzone" id="drop-vendor">
+<input type="file" id="file-vendor" accept=".xlsx,.xls,.csv">
+<div class="icon"> </div>
+<div class="hint">Click or drop file</div>
+<div class="fname" id="fname-vendor"></div>
+</label>
+<div class="colprev" id="prev-vendor"></div>
+</div>
+</div>
+<div class="card" id="card-previous" style="margin-bottom:20px;">
+<h3> previous">optional</span></h3>
+4️⃣ Previous Merged Raw File <span class="badge frost" id="badge-
+<p class="sub">Upload the last <b>Final_Raw_Data</b> export from this tool. Because Leads is a
+YTD file but CRM &amp; Vendor only cover the last ~2 months, leads dated in the <b>last 45
+days</b> get refreshed from today's CRM/Vendor upload, while everything older is <b>frozen
+exactly as it was</b> in this file. Matching is done by mobile number, so nothing gets
+duplicated.</p>
+<label class="dropzone" id="drop-previous" style="max-width:460px;">
+<input type="file" id="file-previous" accept=".xlsx,.xls,.csv">
+<div class="icon"> </div>
+<div class="hint">Click or drop last merged raw file (optional — skip for a plain full merge)</div>
+<div class="fname" id="fname-previous"></div>
+</label>
+<div class="colprev" id="prev-previous"></div>
+<button class="small-ghost" id="btn-clear-previous" style="display:none;margin-top:12px;">✕
+Remove previous file</button>
+</div>
+<div class="actions">
+<button class="primary" id="btn-run" disabled>▶ Run merge</button>
+<button class="ghost" id="btn-reset">Clear selected files</button>
+<button class="ghost" id="btn-lock"> Lock upload</button>
+<span id="run-hint" style="color:var(--muted); font-size:12.5px;">Upload Leads, CRM &amp;
+Vendor to enable — previous raw file is optional</span>
+</div>
+<div class="progress-wrap">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+<div class="progress-label"><span id="progress-text">Idle</span><span id="progress-
+pct">0%</span></div>
+</div>
+<div class="log" id="log">
+<div class="line t">Ready. Waiting for files…</div>
+</div>
+</div>
+</div>
+<!-- ============ PAGE 2: DATA ============ -->
+<div class="page" id="page-data">
+<div id="data-empty" class="empty-state">
+<div class="big"> </div>
+No merged data yet. Unlock the Upload tab and run a merge — your tables will show up here.
+</div>
+<div id="data-content" style="display:none;">
+<div class="stats" id="stats">
+<div class="stat"><div class="num" id="stat-leads">0</div><div class="lbl">Unique leads (final
+rows)</div></div>
+<div class="stat"><div class="num" id="stat-dupes">0</div><div class="lbl">Duplicate mobiles
+removed (Leads)</div></div>
+<div class="stat"><div class="num" id="stat-matched">0</div><div class="lbl">Leads matched
+to Vendor calls</div></div>
+<div class="stat"><div class="num" id="stat-transferred">0</div><div class="lbl">Transferred to
+queue</div></div>
+<div class="stat"><div class="num" id="stat-fresh">0</div><div class="lbl">Freshly updated (≤4️5
+days)</div></div>
+<div class="stat"><div class="num" id="stat-frozen">0</div><div class="lbl">Frozen from
+previous file (&gt;45 days)</div></div>
+<div class="stat"><div class="num" id="stat-nostage">0</div><div class="lbl">Dropped — no
+CRM Lead Stage match</div></div>
+</div>
+<div class="note frost" id="freeze-note"></div>
+<div class="note" id="ambiguity-note">
+Note: "Margin Traded vs Non Traded" and "Acs with Min 1 Product" were left out of this
+output — no source data or logic was defined for them yet.
+</div>
+<div class="tabs">
+<div class="tab active" data-tab="final">Final Raw Data</div>
+<div class="tab" data-tab="leads">Leads (clean)</div>
+<div class="tab" data-tab="crm">CRM (clean)</div>
+<div class="tab" data-tab="vendor">Vendor (clean)</div>
+<button class="dl-btn" id="btn-dl-current" title="Download the full table shown below">⬇
+Download table</button>
+</div>
+<div class="tableview" id="tableview"></div>
+<div class="download-row">
+<button class="primary" id="btn-download">⬇ Download merged workbook (.xlsx)</button>
+<button class="ghost" id="btn-download-csv">⬇ Download Final Raw Data (.csv)</button>
+</div>
+</div>
+</div>
+<!-- ============ PAGE 3: INSIGHTS ============ -->
+<div class="page" id="page-insights">
+<div id="insights-empty" class="empty-state">
+<div class="big"> </div>
+No merged data yet — insights are generated from the Final Raw Data.
+</div>
+<div id="insights-content" style="display:none;">
+<div class="insight-grid">
+<div class="card insight-card">
+<h4> Connected vs Not Connected</h4>
+<div class="barlist" id="ins-connected"></div>
+</div>
+<div class="card insight-card">
+<h4> Post Action</h4>
+<div class="barlist" id="ins-postaction"></div>
+</div>
+</div>
+<div class="card insight-card" style="margin-bottom:16px;">
+<h4> Connected Breakup</h4>
+<p class="sub">Accounts opened = Stage C5, C6 or C7. Notes split those accounts into DIY and
+Non-DIY.</p>
+<div class="tableview breakup-view">
+<table id="ins-breakup-table"></table>
+</div>
+</div>
+<div class="insight-grid">
+<div class="card insight-card">
+<h4> Duration Bucketing</h4>
+<div class="barlist" id="ins-bucket"></div>
+</div>
+<div class="card insight-card">
+<h4> Below / Above 60 sec</h4>
+<div class="barlist" id="ins-6060"></div>
+</div>
+</div>
+<div class="card insight-card" style="margin-bottom:16px;">
+<h4> Lead Stage Funnel (C0 → C7)</h4️>
+<div class="barlist" id="ins-funnel"></div>
+</div>
+<div class="card insight-card" style="margin-bottom:16px;">
+<h4> Monthly Summary</h4>
+<div class="monthly-note" id="monthly-note" style="display:none;"> "Accounts" and
+"Transfer to Account Ratio" need an accounts-opened data source not yet provided — shown as "—"
+until you tell me where that comes from.</div>
+<div style="margin-bottom:12px;">
+<select id="monthly-filter" style="background:var(--panel2); color:var(--text); border:1px solid
+var(--border); border-radius:8px; padding:8px 12px; font-size:12.5px; font-family:inherit;">
+<option value="__all__">All Months</option>
+</select>
+</div>
+<div class="tableview" style="max-height:360px;">
+<table id="ins-monthly-table"></table>
+</div>
+</div>
+<div class="card insight-card" style="margin-bottom:16px;">
+<h4><span id="daily-title"> Current Month Daily Summary</span></h4>
+<div class="tableview" style="max-height:360px;">
+<table id="ins-daily-table"></table>
+</div>
+</div>
+<div class="card insight-card">
+<h4> Lead Owner performance</h4>
+<div class="tableview" style="max-height:320px;">
+<table class="owner-table" id="ins-owner-table"></table>
+</div>
+</div>
+</div>
+</div>
+<!-- ============ PAGE 4: ACCOUNT SUMMARY (YTD/MTD/WTD/Last day) ============ -->
+<div class="page" id="page-periods">
+<div id="periods-empty" class="empty-state">
+<div class="big"> </div>
+No merged data yet — this view is built from the Final Raw Data.
+</div>
+<div id="periods-content" style="display:none;">
+<div class="card insight-card" style="margin-bottom:16px;">
+<h4> range"></span></h4>
+YTD <span style="color:var(--muted); font-weight:400; font-size:11.5px;" id="ytd-
+<div class="tableview period-tableview"><table id="period-table-ytd"></table></div>
+</div>
+<div class="card insight-card" style="margin-bottom:16px;">
+<h4> range"></span></h4>
+MTD <span style="color:var(--muted); font-weight:400; font-size:11.5px;" id="mtd-
+<div class="tableview period-tableview"><table id="period-table-mtd"></table></div>
+</div>
+<div class="card insight-card" style="margin-bottom:16px;">
+<h4> range"></span></h4>
+WTD <span style="color:var(--muted); font-weight:400; font-size:11.5px;" id="wtd-
+<div class="tableview period-tableview"><table id="period-table-wtd"></table></div>
+</div>
+<div class="card insight-card" style="margin-bottom:16px;">
+<h4> id="lastday-range"></span></h4>
+Last day <span style="color:var(--muted); font-weight:400; font-size:11.5px;"
+<div class="tableview period-tableview"><table id="period-table-lastday"></table></div>
+</div>
+<div class="card insight-card" style="margin-bottom:16px;">
+<h4> Monthly Performance Summary</h4>
+<div class="tableview" style="max-height:400px;">
+<table id="period-table-monthlyperf"></table>
+</div>
+</div>
+<div class="card insight-card">
+<h4> Bot / Agent Funnel Summary</h4>
+<p class="sub" style="margin-bottom:12px;">Rows in grey with "—" are segments we haven't
+defined a rule for yet — tell me the logic and I'll fill them in.</p>
+<div class="tableview" style="max-height:520px;">
+<table id="period-table-funnel"></table>
+</div>
+</div>
+</div>
+</div>
+<div class="footer-note">Sheets are parsed and merged client-side with SheetJS. Only the final
+merged result is saved for the dashboard.</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+'use strict';
+// =====================================================================
+// SETTINGS
+// =====================================================================
+// SHA-256 hash of the upload password. Default password: Merge@2026
+// To change it, replace this with the SHA-256 hex of your new password.
+const UPLOAD_PASSWORD_HASH =
+'4f845bf07a986b8cd9b897c5d20372783e6dcaa6a4012b41ac4874a1d2037d49';
+const FREEZE_WINDOW_DAYS = 45;
+const META_DOC = 'dashboard/current'; // pointer to the latest saved merge
+const CHUNK_SIZE = 200000; // chars per stored chunk (store limit is 256 KiB/doc)
+const LOCAL_KEY = 'lcv_dashboard_snapshot_v1'; // fallback when hosted outside claude.ai
+const UNLOCK_KEY = 'lcv_upload_unlocked';
+const state = {
+leads:null, crm:null, vendor:null, previous:null, results:null,
+anchorDate:null, // "today" for YTD/MTD/WTD/Last day = date of the saved merge
+snapshotRunId:null,
+saving:false,
+db:null
+};
+const logEl = document.getElementById('log');
+const progressFill = document.getElementById('progress-fill');
+const progressText = document.getElementById('progress-text');
+const progressPct = document.getElementById('progress-pct');
+function log(msg, cls){
+const line = document.createElement('div');
+line.className = 'line ' + (cls||'');
+const ts = new Date().toLocaleTimeString();
+line.innerHTML = `<span class="t">[${ts}]</span> ${msg}`;
+logEl.appendChild(line);
+logEl.scrollTop = logEl.scrollHeight;
+}
+function setProgress(pct, label){
+progressFill.style.width = pct + '%';
+progressPct.textContent = pct + '%';
+progressText.textContent = label;
+}
+function setSnapshotStatus(text, kind){
+document.getElementById('snapshot-text').textContent = text;
+document.getElementById('snapshot-status').className = 'snapshot-status' + (kind ? ' ' + kind : '');
+}
+// =====================================================================
+// PASSWORD GATE (SHA-256, pure JS so it works in any context)
+// =====================================================================
+const SHA_K = [], SHA_H = [];
+(function(){
+const frac = x => ((x - Math.floor(x)) * 4294967296) | 0;
+let n = 2, c = 0;
+while (c < 64){
+let prime = true;
+for (let i = 2; i * i <= n; i++){ if (n % i === 0){ prime = false; break; } }
+if (prime){ if (c < 8) SHA_H[c] = frac(Math.pow(n, 1/2)); SHA_K[c] = frac(Math.pow(n, 1/3)); c++; }
+n++;
+}
+})();
+function sha256Hex(str){
+const bytes = new TextEncoder().encode(str);
+const l = bytes.length;
+const padded = new Uint8Array(((l + 9 + 63) >> 6) << 6);
+padded.set(bytes); padded[l] = 0x80;
+const dv = new DataView(padded.buffer);
+const bitLen = l * 8;
+dv.setUint32(padded.length - 4, bitLen >>> 0);
+dv.setUint32(padded.length - 8, Math.floor(bitLen / 4294967296));
+const h = SHA_H.slice();
+const w = new Array(64);
+for (let off = 0; off < padded.length; off += 64){
+for (let i = 0; i < 16; i++) w[i] = dv.getUint32(off + i*4) | 0;
+for (let i = 16; i < 64; i++){
+const a = w[i-15], b = w[i-2];
+const s0 = ((a>>>7)|(a<<25)) ^ ((a>>>18)|(a<<14)) ^ (a>>>3);
+const s1 = ((b>>>17)|(b<<15)) ^ ((b>>>19)|(b<<13)) ^ (b>>>10);
+w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0;
+}
+let A=h[0],B=h[1],C=h[2],D=h[3],E=h[4],F=h[5],G=h[6],H=h[7];
+for (let i = 0; i < 64; i++){
+const S1 = ((E>>>6)|(E<<26)) ^ ((E>>>11)|(E<<21)) ^ ((E>>>25)|(E<<7));
+const ch = (E & F) ^ (~E & G);
+const t1 = (H + S1 + ch + SHA_K[i] + w[i]) | 0;
+const S0 = ((A>>>2)|(A<<30)) ^ ((A>>>13)|(A<<19)) ^ ((A>>>22)|(A<<10));
+const mj = (A & B) ^ (A & C) ^ (B & C);
+const t2 = (S0 + mj) | 0;
+H=G; G=F; F=E; E=(D + t1)|0; D=C; C=B; B=A; A=(t1 + t2)|0;
+}
+h[0]=(h[0]+A)|0; h[1]=(h[1]+B)|0; h[2]=(h[2]+C)|0; h[3]=(h[3]+D)|0;
+h[4]=(h[4]+E)|0; h[5]=(h[5]+F)|0; h[6]=(h[6]+G)|0; h[7]=(h[7]+H)|0;
+}
+return h.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
+}
+function isUnlocked(){
+try{ return sessionStorage.getItem(UNLOCK_KEY) === '1'; }catch(e){ return !!state._unlocked; }
+}
+function setUnlocked(v){
+state._unlocked = v;
+try{ if (v) sessionStorage.setItem(UNLOCK_KEY, '1'); else
+sessionStorage.removeItem(UNLOCK_KEY); }catch(e){}
+applyLockUI();
+}
+function applyLockUI(){
+const unlocked = isUnlocked();
+document.getElementById('lock-card').style.display = unlocked ? 'none' : 'block';
+document.getElementById('upload-body').style.display = unlocked ? 'block' : 'none';
+document.getElementById('nav-upload').innerHTML = unlocked ? ' Upload' : ' Upload';
+}
+function tryUnlock(){
+const input = document.getElementById('lock-input');
+const err = document.getElementById('lock-error');
+if (sha256Hex(input.value) === UPLOAD_PASSWORD_HASH){
+err.textContent = '';
+input.value = '';
+setUnlocked(true);
+} else {
+err.textContent = 'Incorrect password. Try again.';
+const row = document.getElementById('lock-row');
+row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake');
+input.select();
+}
+}
+document.getElementById('btn-unlock').addEventListener('click', tryUnlock);
+document.getElementById('lock-input').addEventListener('keydown', e => { if (e.key === 'Enter')
+tryUnlock(); });
+document.getElementById('btn-lock').addEventListener('click', () => setUnlocked(false));
+applyLockUI();
+// ---------- Column name matching helpers ----------
+function norm(s){
+return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+function findCol(headers, candidates){
+const normed = headers.map(norm);
+for (const cand of candidates){
+const nc = norm(cand);
+let idx = normed.indexOf(nc);
+if (idx !== -1) return headers[idx];
+}
+for (const cand of candidates){
+const nc = norm(cand);
+for (let i=0;i<normed.length;i++){
+if (normed[i].includes(nc) || nc.includes(normed[i])) return headers[i];
+}
+}
+return null;
+}
+// ---------- Cleaning helpers ----------
+function last10Digits(val){
+if (val === null || val === undefined) return null;
+const digits = String(val).replace(/\D/g,'');
+if (digits.length === 0) return null;
+return digits.slice(-10).padStart(10,'0');
+}
+function isDIYtoYN(val){
+const s = String(val).trim().toUpperCase();
+if (s === 'TRUE' || s === 'Y' || s === 'YES' || s === '1') return 'Y';
+if (s === 'FALSE' || s === 'N' || s === 'NO' || s === '0') return 'N';
+return s ? s : '';
+}
+// Robust date normalizer used anywhere a date might come back as a raw Excel serial
+// (e.g. 46129) instead of text — this happens when a previously-downloaded file gets
+// opened/edited/re-saved in Excel, which silently converts our "dd-mm-yyyy" text into
+// a real date cell. Handles: true numbers, numeric-looking strings, already-correct
+// dd-mm-yyyy strings (left untouched), and any other parsable date string.
+function normalizeDateValue(val){
+if (val === null || val === undefined || val === '') return '';
+if (typeof val === 'number'){
+const d = XLSX.SSF.parse_date_code(val);
+if (d) return String(d.d).padStart(2,'0') + '-' + String(d.m).padStart(2,'0') + '-' + d.y;
+}
+const str = String(val).trim();
+if (/^\d{2}-\d{2}-\d{4}$/.test(str)) return str; // already dd-mm-yyyy — leave as-is
+if (/^\d+$/.test(str)){
+const num = Number(str);
+if (num > 0 && num < 2958466){ // valid Excel serial date range
+const d = XLSX.SSF.parse_date_code(num);
+if (d) return String(d.d).padStart(2,'0') + '-' + String(d.m).padStart(2,'0') + '-' + d.y;
+}
+}
+const d2 = new Date(str);
+if (!isNaN(d2.getTime())){
+return String(d2.getDate()).padStart(2,'0') + '-' + String(d2.getMonth()+1).padStart(2,'0') + '-' +
+d2.getFullYear();
+}
+return str;
+}
+function durationBucket(mins){
+if (mins < 1) return 'Below 1 min';
+if (mins < 3) return 'Between 1 to 3 min';
+if (mins < 5) return 'Between 3 to 5 min';
+if (mins < 10) return 'Between 5 to 10 min';
+return 'Above 10';
+}
+function parseDMY(dateStr){
+const parts = String(dateStr||'').split('-');
+if (parts.length !== 3) return null;
+const d = parseInt(parts[0],10), m = parseInt(parts[1],10), y = parseInt(parts[2],10);
+if (isNaN(d)||isNaN(m)||isNaN(y)) return null;
+return {d,m,y};
+}
+function toDateObj(dt){ return new Date(dt.y, dt.m-1, dt.d); }
+function fmtDMY(dateObj){
+return String(dateObj.getDate()).padStart(2,'0') + '-' + String(dateObj.getMonth()+1).padStart(2,'0')
++ '-' + dateObj.getFullYear();
+}
+// All period maths is anchored to the date the saved merge was run, so the
+// dashboard does not shift on its own from day to day — it only changes when
+// new sheets are uploaded.
+function referenceNow(){ return state.anchorDate ? new Date(state.anchorDate) : new Date(); }
+function getStandardPeriods(){
+const now = referenceNow();
+const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+const yearStart = new Date(today.getFullYear(), 0, 1);
+const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+const dow = today.getDay();
+const offsetToMonday = (dow + 6) % 7;
+const weekStart = new Date(today);
+weekStart.setDate(today.getDate() - offsetToMonday);
+const lastDay = new Date(today);
+lastDay.setDate(today.getDate() - 1);
+return { today, yearStart, monthStart, weekStart, lastDay };
+}
+// ---------- File reading ----------
+function readFile(file){
+return new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.onload = (e) => {
+try{
+const data = new Uint8Array(e.target.result);
+const wb = XLSX.read(data, {type:'array', cellDates:false});
+const sheetName = wb.SheetNames[0];
+const ws = wb.Sheets[sheetName];
+const rows = XLSX.utils.sheet_to_json(ws, {defval:'', raw:true});
+resolve({rows, sheetName});
+}catch(err){ reject(err); }
+};
+});
+reader.onerror = reject;
+reader.readAsArrayBuffer(file);
+}
+// Previous merged raw file: pick the "Final_Raw_Data" sheet specifically (falls back to first sheet)
+function readPreviousFile(file){
+return new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.onload = (e) => {
+try{
+const data = new Uint8Array(e.target.result);
+const wb = XLSX.read(data, {type:'array', cellDates:false});
+let sheetName = wb.SheetNames.find(n => norm(n).includes('finalrawdata'));
+if (!sheetName) sheetName = wb.SheetNames.find(n => norm(n).includes('rawdata'));
+if (!sheetName) sheetName = wb.SheetNames[0];
+const ws = wb.Sheets[sheetName];
+const rows = XLSX.utils.sheet_to_json(ws, {defval:'', raw:true});
+resolve({rows, sheetName});
+}catch(err){ reject(err); }
+};
+});
+reader.onerror = reject;
+reader.readAsArrayBuffer(file);
+}
+function previewColumns(rows, elId){
+const el = document.getElementById(elId);
+if (!rows.length){ el.style.display='none'; return; }
+const headers = Object.keys(rows[0]);
+el.textContent = 'Columns found: ' + headers.join(', ');
+el.style.display = 'block';
+}
+// ---------- Drop zone wiring (Leads / CRM / Vendor) ----------
+function wireDropzone(key, dropId, fileId, fnameId, badgeId, prevId){
+const drop = document.getElementById(dropId);
+const input = document.getElementById(fileId);
+const fname = document.getElementById(fnameId);
+const badge = document.getElementById(badgeId);
+async function handleFile(file){
+if (!file || !isUnlocked()) return;
+fname.textContent = file.name;
+badge.textContent = 'reading…';
+badge.className = 'badge';
+log(`Reading <b>${file.name}</b> for <b>${key}</b> sheet…`, 'info');
+try{
+const {rows, sheetName} = await readFile(file);
+state[key] = rows;
+badge.textContent = `${rows.length} rows ✓`;
+badge.className = 'badge ok';
+previewColumns(rows, prevId);
+log(`Loaded <b>${key}</b>: ${rows.length} rows from sheet "${sheetName}".`, 'ok');
+}catch(err){
+badge.textContent = 'error';
+log(`Failed to read ${key} file: ${err.message}`, 'bad');
+}
+checkReady();
+}
+input.addEventListener('change', (e) => handleFile(e.target.files[0]));
+drop.addEventListener('dragover', (e)=>{ e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', ()=> drop.classList.remove('drag'));
+drop.addEventListener('drop', (e)=>{
+e.preventDefault(); drop.classList.remove('drag');
+if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+}
+// ---------- Drop zone wiring (Previous raw file — optional) ----------
+function wirePreviousDropzone(){
+const drop = document.getElementById('drop-previous');
+const input = document.getElementById('file-previous');
+const fname = document.getElementById('fname-previous');
+const badge = document.getElementById('badge-previous');
+const clearBtn = document.getElementById('btn-clear-previous');
+async function handleFile(file){
+if (!file || !isUnlocked()) return;
+fname.textContent = file.name;
+badge.textContent = 'reading…';
+badge.className = 'badge';
+log(`Reading previous raw file <b>${file.name}</b>…`, 'info');
+try{
+const {rows, sheetName} = await readPreviousFile(file);
+state.previous = rows;
+badge.textContent = `${rows.length} rows ✓ (sheet: ${sheetName})`;
+badge.className = 'badge frost';
+previewColumns(rows, 'prev-previous');
+clearBtn.style.display = 'inline-block';
+log(`Loaded previous raw file: ${rows.length} rows from sheet "${sheetName}". Leads older than
+${FREEZE_WINDOW_DAYS} days will be frozen using this data.`, 'frost');
+}catch(err){
+badge.textContent = 'error';
+badge.className = 'badge';
+log(`Failed to read previous raw file: ${err.message}`, 'bad');
+state.previous = null;
+}
+}
+input.addEventListener('change', (e) => handleFile(e.target.files[0]));
+drop.addEventListener('dragover', (e)=>{ e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', ()=> drop.classList.remove('drag'));
+drop.addEventListener('drop', (e)=>{
+e.preventDefault(); drop.classList.remove('drag');
+if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+clearBtn.addEventListener('click', () => {
+state.previous = null;
+fname.textContent = '';
+badge.textContent = 'optional';
+badge.className = 'badge frost';
+document.getElementById('prev-previous').style.display = 'none';
+clearBtn.style.display = 'none';
+input.value = '';
+log('Previous raw file cleared. Next run will use a plain full merge (no freeze).', 'info');
+});
+}
+wireDropzone('leads','drop-leads','file-leads','fname-leads','badge-leads','prev-leads');
+wireDropzone('crm','drop-crm','file-crm','fname-crm','badge-crm','prev-crm');
+wireDropzone('vendor','drop-vendor','file-vendor','fname-vendor','badge-vendor','prev-vendor');
+wirePreviousDropzone();
+// Clears only the files picked for the next run — the saved dashboard data stays.
+document.getElementById('btn-reset').addEventListener('click', () => {
+state.leads = state.crm = state.vendor = state.previous = null;
+['leads','crm','vendor'].forEach(k => {
+document.getElementById('fname-'+k).textContent = '';
+document.getElementById('badge-'+k).textContent = 'waiting';
+document.getElementById('badge-'+k).className = 'badge';
+document.getElementById('prev-'+k).style.display = 'none';
+document.getElementById('file-'+k).value = '';
+});
+document.getElementById('btn-clear-previous').click();
+setProgress(0, 'Idle');
+checkReady();
+log('Selected files cleared. The saved dashboard data was not changed.', 'info');
+});
+// Leads, CRM and Vendor are required; the previous raw file is always optional.
+function checkReady(){
+const ready = state.leads && state.crm && state.vendor;
+const btn = document.getElementById('btn-run');
+const hint = document.getElementById('run-hint');
+btn.disabled = !ready || state.saving;
+hint.textContent = ready ? 'All required files loaded — ready to run.' : 'Upload Leads, CRM &
+Vendor to enable — previous raw file is optional';
+}
+// ---------- Top nav ----------
+function goToPage(name){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.querySelectorAll('.navtab').forEach(t=>t.classList.remove('active'));
+document.getElementById('page-'+name).classList.add('active');
+document.getElementById('nav-'+name).classList.add('active');
+}
+document.querySelectorAll('.navtab').forEach(t=>{
+t.addEventListener('click', ()=>{
+if (t.classList.contains('disabled')) return;
+goToPage(t.dataset.page);
+});
+});
+function unlockPage(name){
+const el = document.getElementById('nav-'+name);
+el.classList.remove('disabled');
+el.classList.add('done');
+}
+// ---------- Core processing ----------
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+// Combine a freshly computed Final Raw Data set with a previous export:
+// - leads dated within the last FREEZE_WINDOW_DAYS days use the fresh (just-recomputed) row
+// - leads older than that use the previous file's row untouched, if one exists (frozen)
+// - leads that only exist in the previous file (safety net) are appended, never duplicated
+function combineWithPrevious(freshRows, previousRows){
+const { today } = getStandardPeriods();
+const cutoff = new Date(today);
+cutoff.setDate(cutoff.getDate() - FREEZE_WINDOW_DAYS);
+const prevHeaders = previousRows.length ? Object.keys(previousRows[0]) : [];
+const p_mobile = findCol(prevHeaders, ['recipient number','mobile
+number','mobile_number','mobile','customer id (mobile)','customer id']);
+const p_date = findCol(prevHeaders, ['date (ist)','date','created_at']);
+const prevMap = new Map();
+let prevDateFixCount = 0;
+if (p_mobile){
+for (const r of previousRows){
+const m = last10Digits(r[p_mobile]);
+if (!m) continue;
+if (prevMap.has(m)) continue;
+const clone = Object.assign({}, r);
+if (p_date){
+const before = clone[p_date];
+const fixed = normalizeDateValue(before);
+if (String(before) !== fixed) prevDateFixCount++;
+clone[p_date] = fixed;
+// keep the canonical output key in sync too, in case the previous file
+// used a differently-named date column
+clone['Date (IST)'] = fixed;
+}
+prevMap.set(m, clone);
+}
+}
+const freshMobileSet = new Set(freshRows.map(r => r['Recipient Number']));
+const usedPrevMobiles = new Set();
+let frozenCount = 0, freshCount = 0;
+const combined = freshRows.map(row => {
+const mobile = row['Recipient Number'];
+const dt = parseDMY(row['Date (IST)']);
+const isRecent = dt ? (toDateObj(dt).getTime() >= cutoff.getTime()) : true; // undated -> safest to
+keep fresh
+if (!isRecent && prevMap.has(mobile)){
+usedPrevMobiles.add(mobile);
+frozenCount++;
+return Object.assign({}, prevMap.get(mobile), { __src: 'frozen' });
+}
+freshCount++;
+return row;
+});
+let orphanCount = 0;
+if (p_mobile){
+for (const [mobile, prevRow] of prevMap.entries()){
+if (usedPrevMobiles.has(mobile)) continue;
+if (freshMobileSet.has(mobile)) continue;
+combined.push(Object.assign({}, prevRow, { __src: 'frozen' }));
+orphanCount++;
+}
+}
+return { rows: combined, frozenCount, freshCount, orphanCount, cutoff, dateColUsed: p_date,
+prevDateFixCount };
+}
+async function processAll(){
+if (!isUnlocked()) return;
+document.getElementById('btn-run').disabled = true;
+logEl.innerHTML = '';
+setProgress(2️, 'Starting…');
+log('Starting merge process…', 'info');
+const runAt = new Date();
+const previousAnchor = state.anchorDate;
+state.anchorDate = runAt.toISOString();
+await sleep(150);
+// ---- STEP 1: Leads ----
+setProgress(10, 'Cleaning Leads sheet');
+const leadsHeaders = Object.keys(state.leads[0]);
+const colCreatedAt = findCol(leadsHeaders, ['created_at','createdat','created date','date']);
+const colMobile = findCol(leadsHeaders, ['mobile_number','mobilenumber','mobile','phone']);
+if (!colCreatedAt || !colMobile){
+log(`Could not confidently find created_at / mobile_number columns in Leads sheet. Found
+headers: ${leadsHeaders.join(', ')}`, 'bad');
+} else {
+log(`Leads columns mapped → created_at: "${colCreatedAt}", mobile_number: "${colMobile}"`,
+'ok');
+}
+// Today's leads are incomplete (calls still happening), so they are left out entirely.
+const todayStr = fmtDMY(runAt);
+const seenMobiles = new Set();
+let dupeCount = 0, todayCount = 0;
+const leadsClean = [];
+for (const row of state.leads){
+const mobileRaw = row[colMobile];
+const mobile = last10Digits(mobileRaw);
+if (!mobile) continue;
+const createdAt = normalizeDateValue(row[colCreatedAt]);
+if (createdAt === todayStr){ todayCount++; continue; }
+if (seenMobiles.has(mobile)){ dupeCount++; continue; }
+seenMobiles.add(mobile);
+leadsClean.push({
+created_at: createdAt,
+mobile_number: mobile
+});
+}
+log(`Leads cleaned: ${leadsClean.length} unique mobile numbers, ${dupeCount} duplicate rows
+removed.`, dupeCount>0?'warn':'ok');
+log(todayCount ? `Excluded ${todayCount} lead row(s) dated today (${todayStr}) — today's data is
+not added to the sheet.` : `No leads dated today (${todayStr}) — nothing to exclude.`,
+todayCount?'warn':'ok');
+await sleep(150);
+// ---- STEP 2: CRM ----
+setProgress(28, 'Cleaning CRM sheet');
+const crmHeaders = Object.keys(state.crm[0]);
+const c_mobile = findCol(crmHeaders, ['mobile','mobile number','mobilenumber']);
+const c_stage = findCol(crmHeaders, ['lead stage','leadstage','stage']);
+const c_client = findCol(crmHeaders, ['client code','clientcode']);
+const c_diy = findCol(crmHeaders, ['isdiy','is diy','diy']);
+const c_owner = findCol(crmHeaders, ['lead owner','leadowner','owner']);
+const c_botattempt = findCol(crmHeaders, ['bot call attempt','botcallattempt']);
+const c_botconnect = findCol(crmHeaders, ['bot call connect','botcallconnect']);
+const c_botremark = findCol(crmHeaders, ['bot remark','botremark','remarks']);
+log(`CRM columns mapped → Mobile: "${c_mobile}", Lead Stage: "${c_stage}", Client Code:
+"${c_client}", isDIY: "${c_diy}", Lead Owner: "${c_owner}", Bot Attempt: "${c_botattempt}", Bot
+Connect: "${c_botconnect}", Bot Remark: "${c_botremark}"`, 'ok');
+const crmClean = [];
+const crmByMobile = new Map();
+let crmDupes = 0;
+for (const row of state.crm){
+const mobile = last10Digits(row[c_mobile]);
+if (!mobile) continue;
+const rec = {
+Mobile: mobile,
+'Lead Stage': String(row[c_stage]??'').trim(),
+'Client Code': String(row[c_client]??'').trim(),
+isDIY: isDIYtoYN(row[c_diy]),
+'Lead Owner': String(row[c_owner]??'').trim(),
+'Bot Call Attempt': Number(row[c_botattempt])||0,
+'Bot Call Connect': Number(row[c_botconnect])||0,
+'Bot Remark': String(row[c_botremark]??'').trim()
+};
+crmClean.push(rec);
+if (!crmByMobile.has(mobile)) crmByMobile.set(mobile, rec);
+else crmDupes++;
+}
+log(`CRM cleaned: ${crmClean.length} rows processed${crmDupes?`, ${crmDupes} duplicate
+mobiles found (first occurrence kept for mapping)`:''}.`, crmDupes>0?'warn':'ok');
+await sleep(150);
+// ---- STEP 3: Vendor ----
+setProgress(45, 'Cleaning Vendor sheet');
+const vendorHeaders = Object.keys(state.vendor[0]);
+const v_mobile = findCol(vendorHeaders, ['customer id','customerid','mobile','mobile number']);
+const v_duration = findCol(vendorHeaders, ['total call duration (in seconds)','total call
+duration','duration']);
+const v_postaction = findCol(vendorHeaders, ['post action','postaction']);
+log(`Vendor columns mapped → customer id: "${v_mobile}", Duration: "${v_duration}", Post
+Action: "${v_postaction}"`, 'ok');
+const vendorClean = [];
+for (const row of state.vendor){
+const mobile = last10Digits(row[v_mobile]);
+if (!mobile) continue;
+vendorClean.push({
+mobile,
+duration: Number(row[v_duration])||0,
+post_action: String(row[v_postaction]??'').trim()
+});
+}
+const vendorByMobile = new Map();
+for (const v of vendorClean){
+if (!vendorByMobile.has(v.mobile)) vendorByMobile.set(v.mobile, []);
+vendorByMobile.get(v.mobile).push(v);
+}
+log(`Vendor cleaned: ${vendorClean.length} call records across ${vendorByMobile.size} unique
+mobile numbers.`, 'ok');
+await sleep(150);
+// ---- STEP 4: Merge ----
+setProgress(65, 'Merging on mobile number (Leads = primary key)');
+let matchedCount = 0, transferredCount = 0;
+let finalRows = [];
+for (const lead of leadsClean){
+const mobile = lead.mobile_number;
+const crmRec = crmByMobile.get(mobile);
+const vendorRecs = vendorByMobile.get(mobile) || [];
+const timesConnected = vendorRecs.length;
+if (timesConnected > 0) matchedCount++;
+const totalSec = vendorRecs.reduce((s,v)=>s+v.duration,0);
+const totalMin = Math.round(totalSec/60);
+const transferred = vendorRecs.some(v => norm(v.post_action) === 'transfertoqueue');
+if (transferred) transferredCount++;
+finalRows.push({
+'Date (IST)': lead.created_at,
+'Recipient Number': mobile,
+'Stage': crmRec ? crmRec['Lead Stage'] : '',
+'Client Code': crmRec ? crmRec['Client Code'] : '',
+'DIY/Non DIY': crmRec ? crmRec.isDIY : '',
+'No. of times Connected': timesConnected,
+'Connected vs Not Connected': timesConnected === 0 ? 'Not Connected' : 'Connected',
+'Total Duration (in sec)': totalSec,
+'Total Duration (in min)': totalMin,
+'Duration Bucketing': durationBucket(totalMin),
+'Below/Above 60 sec': totalSec >= 60 ? 'Above 60 Sec' : 'Below 60 Sec',
+'Post Action': transferred ? 'Transferred' : 'Not Transferred',
+'Lead Owner': crmRec ? crmRec['Lead Owner'] : '',
+'Greylabs Bot Attempt': crmRec ? crmRec['Bot Call Attempt'] : 0,
+'Greylabs Bot Connect': crmRec ? crmRec['Bot Call Connect'] : 0,
+'Bot Remarks': crmRec ? crmRec['Bot Remark'] : '',
+__src: 'fresh'
+});
+}
+log(`Merge complete: ${finalRows.length} freshly computed rows. ${matchedCount} leads had at
+least one vendor call. ${transferredCount} transferred to queue.`, 'ok');
+await sleep(150);
+// ---- STEP 5: Rolling 45-day freeze against previous raw file ----
+let frozenCount = 0, freshCount = finalRows.length, freezeNote = '';
+if (state.previous && state.previous.length){
+setProgress(80, `Applying ${FREEZE_WINDOW_DAYS}-day rolling freeze from previous file`);
+const combineResult = combineWithPrevious(finalRows, state.previous);
+finalRows = combineResult.rows;
+frozenCount = combineResult.frozenCount;
+freshCount = combineResult.freshCount;
+const freezeCutoff = combineResult.cutoff;
+const orphanMsg = combineResult.orphanCount ? `, ${combineResult.orphanCount} historical
+leads recovered from the previous file only` : '';
+log(`Rolling freeze applied: ${freshCount} leads refreshed (last ${FREEZE_WINDOW_DAYS} days),
+${frozenCount} leads frozen from the previous file (older than ${FREEZE_WINDOW_DAYS}
+days)${orphanMsg}. No duplicates — matched by mobile number.`, 'frost');
+if (combineResult.prevDateFixCount){
+log(`Repaired ${combineResult.prevDateFixCount} date value(s) in the previous file that had
+turned into raw Excel serial numbers (e.g. 46129) and converted them back to dd-mm-yyyy.`,
+'warn');
+}
+freezeNote = ` Rolling freeze active — leads dated <b>before ${fmtDMY(freezeCutoff)}</b>
+came from the previous file (frozen); leads from <b>${fmtDMY(freezeCutoff)} onward</b> were
+recalculated from the CRM &amp; Vendor uploads.`;
+} else {
+log('No previous raw file supplied — every row was freshly computed from this run (no freeze
+applied). Upload a previous Final_Raw_Data export next time to preserve history beyond what
+CRM/Vendor cover.', 'info');
+}
+await sleep(120);
+// ---- STEP 6: drop leads with no matching CRM Lead Stage ----
+setProgress(86, 'Dropping leads with no CRM Lead Stage match');
+const preDropCount = finalRows.length;
+finalRows = finalRows.filter(r => String(r['Stage']||'').trim() !== '');
+const droppedNoStage = preDropCount - finalRows.length;
+// Safety net: also drop any row dated today that came in via the previous file.
+const preTodayCount = finalRows.length;
+finalRows = finalRows.filter(r => normalizeDateValue(r['Date (IST)']) !== todayStr);
+if (preTodayCount !== finalRows.length) log(`Removed ${preTodayCount - finalRows.length} row(s)
+dated today from the previous file as well.`, 'warn');
+if (droppedNoStage > 0){
+log(`Dropped ${droppedNoStage} lead(s) from the final result — no matching CRM Lead Stage
+was found for them.`, 'warn');
+} else {
+log('No leads dropped — every lead had a matching CRM Lead Stage.', 'ok');
+}
+if (state.previous && state.previous.length){
+frozenCount = finalRows.filter(r => r.__src === 'frozen').length;
+freshCount = finalRows.length - frozenCount;
+} else {
+freshCount = finalRows.length;
+frozenCount = 0;
+}
+finalRows.forEach(r => { delete r.__src; });
+await sleep(120);
+const snapshot = {
+runId: 'r' + runAt.getTime(),
+runAt: runAt.toISOString(),
+stats: {
+leads: finalRows.length, dupes: dupeCount, matched: matchedCount, transferred:
+transferredCount,
+fresh: freshCount, frozen: frozenCount, nostage: droppedNoStage
+},
+freezeNote,
+finalRows
+};
+// ---- STEP 7: save so the dashboard stays put until the next upload ----
+setProgress(92, 'Saving merged data for the dashboard');
+state.saving = true;
+try{
+const where = await saveSnapshot(snapshot);
+log(`Saved this merge (${finalRows.length} rows) ${where}. The dashboard will keep showing it
+until new sheets are uploaded.`, 'ok');
+}catch(err){
+log(`Could not save this merge: ${err && (err.message || err.code) || err}. The results below are
+shown for this session only.`, 'bad');
+}
+state.saving = false;
+setProgress(100, 'Done');
+state.results = {
+leadsClean,
+crmClean,
+vendorClean: vendorClean.map(v=>({
+'Customer ID (Mobile)': v.mobile,
+'Total Call Duration (In Seconds)': v.duration,
+'Post Action': v.post_action
+})),
+finalRows
+};
+state.snapshotRunId = snapshot.runId;
+renderResults(snapshot);
+checkReady();
+goToPage('data');
+log('Switched to Data tab. Insights and Account Summary tabs are also ready.', 'info');
+if (!previousAnchor) {/* first run on this page */}
+}
+// ---------- Render everything from a snapshot ----------
+function renderResults(snap){
+const s = snap.stats || {};
+document.getElementById('stat-leads').textContent = s.leads ?? snap.finalRows.length;
+document.getElementById('stat-dupes').textContent = s.dupes ?? 0;
+document.getElementById('stat-matched').textContent = s.matched ?? 0;
+document.getElementById('stat-transferred').textContent = s.transferred ?? 0;
+document.getElementById('stat-fresh').textContent = s.fresh ?? 0;
+document.getElementById('stat-frozen').textContent = s.frozen ?? 0;
+document.getElementById('stat-nostage').textContent = s.nostage ?? 0;
+document.getElementById('stats').style.display = 'grid';
+document.getElementById('ambiguity-note').style.display = 'block';
+const noteEl = document.getElementById('freeze-note');
+noteEl.innerHTML = snap.freezeNote || '';
+noteEl.style.display = snap.freezeNote ? 'block' : 'none';
+document.getElementById('data-empty').style.display = 'none';
+document.getElementById('data-content').style.display = 'block';
+document.getElementById('insights-empty').style.display = 'none';
+document.getElementById('insights-content').style.display = 'block';
+document.getElementById('periods-empty').style.display = 'none';
+document.getElementById('periods-content').style.display = 'block';
+const activeTab = document.querySelector('.tab.active');
+renderTable(activeTab ? activeTab.dataset.tab : 'final');
+buildInsights(snap.finalRows);
+buildPeriodSummary(snap.finalRows);
+unlockPage('data');
+unlockPage('insights');
+unlockPage('periods');
+const when = new Date(snap.runAt);
+setSnapshotStatus(`Showing merge from ${when.toLocaleString()} · ${snap.finalRows.length} rows
+· updates only when new sheets are uploaded`, 'live');
+}
+function applySnapshot(snap, navigate){
+state.anchorDate = snap.runAt;
+state.snapshotRunId = snap.runId;
+state.results = { leadsClean:null, crmClean:null, vendorClean:null, finalRows: snap.finalRows };
+renderResults(snap);
+if (navigate && document.getElementById('page-upload').classList.contains('active'))
+goToPage('data');
+}
+// =====================================================================
+// PERSISTENCE — shared artifact database when published on claude.ai,
+// browser storage as a fallback when hosted anywhere else.
+// =====================================================================
+function bytesToB64(bytes){
+let bin = '';
+for (let i = 0; i < bytes.length; i += 0x8000){
+bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+}
+return btoa(bin);
+}
+function b64ToBytes(b64){
+const bin = atob(b64);
+const out = new Uint8Array(bin.length);
+for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+return out;
+}
+async function encodePayload(obj){
+const json = JSON.stringify(obj);
+if (typeof CompressionStream === 'function'){
+const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('gzip'));
+const buf = new Uint8Array(await new Response(stream).arrayBuffer());
+return { enc: 'gzip-b64', text: bytesToB64(buf) };
+}
+return { enc: 'json', text: json };
+}
+async function decodePayload(enc, text){
+if (enc === 'gzip-b64'){
+const stream = new Blob([b64ToBytes(text)]).stream().pipeThrough(new
+DecompressionStream('gzip'));
+return JSON.parse(await new Response(stream).text());
+}
+return JSON.parse(text);
+}
+// Rows are stored as header + value arrays to keep the saved copy small.
+function packRows(rows){
+const headerSet = new Set();
+rows.forEach(r => Object.keys(r).forEach(k => headerSet.add(k)));
+const headers = [...headerSet];
+return { headers, data: rows.map(r => headers.map(h => r[h] === undefined ? '' : r[h])) };
+}
+function unpackRows(packed){
+return packed.data.map(arr => {
+const o = {};
+packed.headers.forEach((h,i) => { o[h] = arr[i]; });
+return o;
+});
+}
+async function saveSnapshot(snap){
+const payload = { runAt: snap.runAt, stats: snap.stats, freezeNote: snap.freezeNote, rows:
+packRows(snap.finalRows) };
+const { enc, text } = await encodePayload(payload);
+const meta = { runId: snap.runId, runAt: snap.runAt, enc, rowCount: snap.finalRows.length };
+if (state.db){
+const db = state.db;
+let oldMeta = null;
+try{ const s = await db.doc(META_DOC).get(); if (s.exists) oldMeta = s.data(); }catch(e){}
+const chunks = [];
+for (let i = 0; i < text.length; i += CHUNK_SIZE) chunks.push(text.slice(i, i + CHUNK_SIZE));
+if (!chunks.length) chunks.push('');
+for (let i = 0; i < chunks.length; i++){
+await withRetry(() => db.doc(`runs/${snap.runId}/chunks/c${String(i).padStart(4,'0')}`).set({ d:
+chunks[i] }));
+}
+// Point the dashboard at the new run only after every chunk is written.
+state.snapshotRunId = snap.runId;
+await withRetry(() => db.doc(META_DOC).set(Object.assign({}, meta, { chunkCount:
+chunks.length })));
+// Tidy up the previous run's chunks.
+if (oldMeta && oldMeta.runId && oldMeta.runId !== snap.runId){
+for (let i = 0; i < (oldMeta.chunkCount||0); i++){
+try{ await db.doc(`runs/${oldMeta.runId}/chunks/c${String(i).padStart(4,'0')}`).delete();
+}catch(e){}
+}
+}
+return 'to the shared dashboard (everyone opening this page sees it)';
+}
+try{
+localStorage.setItem(LOCAL_KEY, JSON.stringify(Object.assign({}, meta, { text })));
+return 'in this browser';
+}catch(e){
+throw new Error('browser storage is full or unavailable');
+}
+}
+async function withRetry(fn){
+try{ return await fn(); }
+catch(e){
+throw e;
+if (e && e.code === 'unavailable'){ await sleep(400 + Math.random()*600); return fn(); }
+}
+}
+async function loadFromDb(meta){
+const db = state.db;
+let text = '';
+for (let i = 0; i < (meta.chunkCount||0); i++){
+const s = await withRetry(() =>
+db.doc(`runs/${meta.runId}/chunks/c${String(i).padStart(4,'0')}`).get());
+if (!s.exists) throw new Error('saved data is incomplete');
+text += s.data().d || '';
+}
+const payload = await decodePayload(meta.enc, text);
+return { runId: meta.runId, runAt: payload.runAt, stats: payload.stats, freezeNote:
+payload.freezeNote, finalRows: unpackRows(payload.rows) };
+}
+async function loadFromLocal(){
+let raw = null;
+try{ raw = localStorage.getItem(LOCAL_KEY); }catch(e){ raw = null; }
+if (!raw) return null;
+const meta = JSON.parse(raw);
+const payload = await decodePayload(meta.enc, meta.text);
+return { runId: meta.runId, runAt: payload.runAt, stats: payload.stats, freezeNote:
+payload.freezeNote, finalRows: unpackRows(payload.rows) };
+}
+async function initPersistence(){
+let db = null;
+try{
+if (window.claude && typeof window.claude.use === 'function') db = await
+window.claude.use('db');
+}catch(e){ db = null; }
+state.db = db;
+if (db){
+let first = true;
+db.doc(META_DOC).onSnapshot(async (snap) => {
+const isFirst = first; first = false;
+if (!snap.exists){
+if (!state.snapshotRunId) setSnapshotStatus('No merged data saved yet — unlock Upload and
+run a merge.', 'empty');
+return;
+}
+const meta = snap.data();
+if (!meta || meta.runId === state.snapshotRunId || state.saving) return;
+try{
+setSnapshotStatus('Loading saved data…');
+const loaded = await loadFromDb(meta);
+if (state.saving) return;
+applySnapshot(loaded, isFirst);
+}catch(err){
+setSnapshotStatus('Saved data could not be loaded. Run a new merge to refresh it.', 'empty');
+}
+}, () => {
+if (!state.snapshotRunId) setSnapshotStatus('Saved data is unavailable right now. Reload the
+page to try again.', 'empty');
+});
+return;
+}
+try{
+const loaded = await loadFromLocal();
+if (loaded) applySnapshot(loaded, true);
+else setSnapshotStatus('No merged data saved yet — unlock Upload and run a merge.', 'empty');
+}catch(e){
+setSnapshotStatus('No merged data saved yet — unlock Upload and run a merge.', 'empty');
+}
+}
+// ---------- Insights ----------
+function countBy(rows, key){
+const map = new Map();
+for (const r of rows){
+const k = (r[key] === '' || r[key] === undefined || r[key] === null) ? '(blank)' : String(r[key]);
+map.set(k, (map.get(k)||0)+1);
+}
+return [...map.entries()].sort((a,b)=>b[1]-a[1]);
+}
+function renderBarList(elId, entries, total){
+const el = document.getElementById(elId);
+if (!entries.length){ el.innerHTML = '<p style="color:var(--muted);font-size:12px;">No data.</p>';
+return; }
+el.innerHTML = entries.map(([label,count])=>{
+const pct = total ? Math.round((count/total)*100) : 0;
+return `<div class="barrow">
+<div class="lbl2" title="${label}">${label}</div>
+<div class="bartrack"><div class="barfill" style="width:${pct}%"></div></div>
+<div class="barval">${count} (${pct}%)</div>
+</div>`;
+}).join('');
+}
+function buildInsights(rows){
+const total = rows.length;
+renderBarList('ins-connected', countBy(rows,'Connected vs Not Connected'), total);
+renderBarList('ins-postaction', countBy(rows,'Post Action'), total);
+renderBarList('ins-bucket', countBy(rows,'Duration Bucketing'), total);
+renderBarList('ins-6060', countBy(rows,'Below/Above 60 sec'), total);
+const ownerMap = new Map();
+for (const r of rows){
+const owner = r['Lead Owner'] || '(blank)';
+if (!ownerMap.has(owner)) ownerMap.set(owner, {leads:0, connected:0, transferred:0,
+accounts:0, botAttempt:0, botConnect:0, totalSec:0});
+const o = ownerMap.get(owner);
+o.leads++;
+if (r['Connected vs Not Connected'] === 'Connected') o.connected++;
+if (r['Post Action'] === 'Transferred') o.transferred++;
+if (isAccountOpened(r)) o.accounts++;
+o.botAttempt += Number(r['Greylabs Bot Attempt'])||0;
+o.botConnect += Number(r['Greylabs Bot Connect'])||0;
+o.totalSec += Number(r['Total Duration (in sec)'])||0;
+}
+const ownerRows = [...ownerMap.entries()].sort((a,b)=>b[1].leads-a[1].leads);
+let ownerHtml = '<thead><tr><th>Lead
+Owner</th><th>Leads</th><th>Connected</th><th>Connect
+%</th><th>Transferred</th><th>Accounts</th><th>Bot Attempts</th><th>Bot
+Connects</th><th>Total Call Duration (min)</th></tr></thead><tbody>';
+for (const [owner,o] of ownerRows){
+const pct = o.leads ? Math.round((o.connected/o.leads)*100) : 0;
+ownerHtml +=
+`<tr><td>${owner}</td><td>${o.leads}</td><td>${o.connected}</td><td>${pct}%</td><td>${o.trans
+ferred}</td><td>${o.accounts}</td><td>${o.botAttempt}</td><td>${o.botConnect}</td><td>${Mat
+h.round(o.totalSec/60).toLocaleString('en-IN')}</td></tr>`;
+}
+ownerHtml += '</tbody>';
+document.getElementById('ins-owner-table').innerHTML = ownerHtml;
+buildFunnel(rows);
+buildConnectedBreakup(rows);
+buildMonthlySummary(rows);
+buildCurrentMonthDaily(rows);
+}
+function buildFunnel(rows){
+const stageOrder = ['C0','C1','C2','C3','C4','C5','C6','C7'];
+const counts = {};
+stageOrder.forEach(s => counts[s] = 0);
+let others = 0;
+for (const r of rows){
+const stage = String(r['Stage']||'').trim().toUpperCase();
+if (stageOrder.includes(stage)) counts[stage]++;
+else if (stage) others++;
+}
+const maxCount = Math.max(...stageOrder.map(s=>counts[s]), 1);
+const el = document.getElementById('ins-funnel');
+let html = stageOrder.map(s=>{
+const c = counts[s];
+const pct = Math.round((c/maxCount)*100);
+return `<div class="barrow">
+<div class="lbl2">${s}</div>
+<div class="bartrack"><div class="barfill" style="width:${pct}%"></div></div>
+<div class="barval">${c}</div>
+</div>`;
+}).join('');
+if (others > 0){
+html += `<div class="barrow"><div class="lbl2">Other/blank</div><div class="bartrack"><div
+class="barfill" style="width:${Math.round((others/maxCount)*100)}%;background:var(--
+warn);"></div></div><div class="barval">${others}</div></div>`;
+}
+el.innerHTML = html;
+}
+// ---------- Connected Breakup (Insights) ----------
+function buildConnectedBreakup(rows){
+const isDIY = r => String(r['DIY/Non DIY']||'').trim().toUpperCase() === 'Y';
+const connected = rows.filter(r => r['Connected vs Not Connected'] === 'Connected');
+const notConnected = rows.filter(r => r['Connected vs Not Connected'] !== 'Connected');
+const below60 = connected.filter(r => (Number(r['Total Duration (in sec)'])||0) < 60);
+const above60 = connected.filter(r => (Number(r['Total Duration (in sec)'])||0) >= 60);
+const fmt = n => Number(n).toLocaleString('en-IN');
+const p = (a,b) => b ? Math.round(a/b*100) + '%' : '0%';
+function seg(list){
+const t = list.filter(r => r['Post Action'] === 'Transferred');
+const nt = list.filter(r => r['Post Action'] !== 'Transferred');
+const tAcc = t.filter(isAccountOpened), ntAcc = nt.filter(isAccountOpened);
+return {
+total: list.length, t: t.length, tAcc: tAcc.length, nt: nt.length, ntAcc: ntAcc.length,
+tDiy: tAcc.filter(isDIY).length, ntDiy: ntAcc.filter(isDIY).length
+};
+}
+function segRows(label, g){
+const notes = `Transferred A/c: <b>DIY ${fmt(g.tDiy)}</b> · Non-DIY ${fmt(g.tAcc - g.tDiy)}<br>` +
+`Not Transferred A/c: <b>DIY ${fmt(g.ntDiy)}</b> · Non-DIY ${fmt(g.ntAcc - g.ntDiy)}`;
+return `<tr>
+<td class="lbl">${label}</td><td class="num">${fmt(g.total)}</td>
+<td class="num">${fmt(g.t)}</td><td class="num">${fmt(g.tAcc)}</td>
+<td class="num">${fmt(g.nt)}</td><td class="num">${fmt(g.ntAcc)}</td>
+<td class="notes" rowspan="2">${notes}</td>
+</tr>
+<tr class="pct">
+<td></td><td></td>
+<td class="num">${p(g.t, g.total)}</td><td class="num">${p(g.tAcc, g.t)}</td>
+<td class="num">${p(g.nt, g.total)}</td><td class="num">${p(g.ntAcc, g.nt)}</td>
+</tr>`;
+}
+let html = `<tbody>
+<tr class="top"><td class="lbl">Total Fresh Leads</td><td
+class="num">${fmt(rows.length)}</td><td colspan="5"></td></tr>
+<tr class="top"><td class="lbl">Connected</td><td
+class="num">${fmt(connected.length)}</td><td class="num">${p(connected.length,
+rows.length)}</td><td colspan="4"></td></tr>
+<tr class="subhead"><td>Connected - Breakup</td><td style="text-align:right;">Leads</td><td
+style="text-align:right;">Transferred</td><td style="text-align:right;">Acc Opened</td><td
+style="text-align:right;">Not Transferred</td><td style="text-align:right;">Acc
+Opened</td><td>Notes (accounts: DIY / Non-DIY)</td></tr>`;
+html += segRows('Less than 60s', seg(below60));
+html += segRows('More than 60s', seg(above60));
+html += segRows('Not Connected', seg(notConnected));
+html += '</tbody>';
+document.getElementById('ins-breakup-table').innerHTML = html;
+}
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// An account counts as opened when the lead's Stage (CRM Lead Stage) is C5, C6 or C7.
+const ACCOUNT_STAGES = ['C5','C6','C7'];
+function isAccountOpened(r){
+return ACCOUNT_STAGES.includes(String(r['Stage']||'').trim().toUpperCase());
+}
+let monthlyAggCache = null;
+function renderMonthlyTable(filterKey){
+if (!monthlyAggCache) return;
+const { sortedKeys, months } = monthlyAggCache;
+const keysToShow = filterKey === '__all__' ? sortedKeys : sortedKeys.filter(k => k === filterKey);
+let html = '<thead><tr><th>Date</th><th>Leads</th><th>Connected</th><th>Above 60
+Sec</th><th>Transferred</th><th>Accounts</th><th>Transfer to Account Ratio</th><th>Not
+Connected</th><th>Accounts</th><th>DIY</th></tr></thead><tbody>';
+for (const key of keysToShow){
+const a = months.get(key);
+const label = MONTH_ABBR[a.m-1] + '-' + String(a.y).slice(-2);
+const ratio = a.transferred > 0 ? Math.round((a.accountsTransferred/a.transferred)*100) + '%' :
+'0%';
+html += `<tr>
+<td>${label}</td>
+<td>${a.leads}</td>
+<td>${a.connected}</td>
+<td>${a.above60}</td>
+<td>${a.transferred}</td>
+<td>${a.accountsTransferred}</td>
+<td>${ratio}</td>
+<td>${a.notConnected}</td>
+<td>${a.accountsNotConnected}</td>
+<td>${a.diyNotConnected}</td>
+</tr>`;
+}
+html += '</tbody>';
+document.getElementById('ins-monthly-table').innerHTML = html;
+}
+document.getElementById('monthly-filter').addEventListener('change', (e) => {
+renderMonthlyTable(e.target.value);
+});
+function buildMonthlySummary(rows){
+const months = new Map();
+for (const r of rows){
+const dt = parseDMY(r['Date (IST)']);
+if (!dt) continue;
+const key = dt.y + '-' + String(dt.m).padStart(2,'0');
+if (!months.has(key)){
+months.set(key, {
+y: dt.y, m: dt.m, leads:0, connected:0, above60:0, transferred:0,
+accountsTransferred:0, notConnected:0, accountsNotConnected:0, diyNotConnected:0
+});
+}
+const agg = months.get(key);
+agg.leads++;
+const connected = r['Connected vs Not Connected'] === 'Connected';
+const transferred = r['Post Action'] === 'Transferred';
+if (connected) agg.connected++; else agg.notConnected++;
+if (r['Below/Above 60 sec'] === 'Above 60 Sec') agg.above60++;
+if (transferred) agg.transferred++;
+if (transferred && isAccountOpened(r)) agg.accountsTransferred++;
+if (!connected){
+if (r['DIY/Non DIY'] === 'Y') agg.diyNotConnected++;
+if (isAccountOpened(r)) agg.accountsNotConnected++;
+}
+}
+const sortedKeys = [...months.keys()].sort();
+monthlyAggCache = { sortedKeys, months };
+const select = document.getElementById('monthly-filter');
+select.innerHTML = '<option value="__all__">All Months</option>' +
+sortedKeys.map(key => {
+const a = months.get(key);
+const label = MONTH_ABBR[a.m-1] + '-' + String(a.y).slice(-2);
+return `<option value="${key}">${label}</option>`;
+}).join('');
+renderMonthlyTable('__all__');
+document.getElementById('monthly-note').style.display = 'none';
+}
+function buildCurrentMonthDaily(rows){
+const now = referenceNow();
+const curM = now.getMonth() + 1;
+const curY = now.getFullYear();
+document.getElementById('daily-title').textContent =
+` Current Month Daily Summary (${MONTH_ABBR[curM-1]} ${curY})`;
+const days = new Map();
+for (const r of rows){
+const dt = parseDMY(r['Date (IST)']);
+if (!dt || dt.m !== curM || dt.y !== curY) continue;
+if (!days.has(dt.d)){
+days.set(dt.d, {
+d: dt.d, leads:0, connected:0, above60:0, transferred:0,
+accountsTransferred:0, notConnected:0, accountsNotConnected:0, diyNotConnected:0
+});
+}
+const agg = days.get(dt.d);
+agg.leads++;
+const connected = r['Connected vs Not Connected'] === 'Connected';
+const transferred = r['Post Action'] === 'Transferred';
+if (connected) agg.connected++; else agg.notConnected++;
+if (r['Below/Above 60 sec'] === 'Above 60 Sec') agg.above60++;
+if (transferred) agg.transferred++;
+if (transferred && isAccountOpened(r)) agg.accountsTransferred++;
+if (!connected){
+if (r['DIY/Non DIY'] === 'Y') agg.diyNotConnected++;
+if (isAccountOpened(r)) agg.accountsNotConnected++;
+}
+}
+const sortedDays = [...days.keys()].sort((a,b)=>a-b);
+const el = document.getElementById('ins-daily-table');
+if (!sortedDays.length){
+el.innerHTML = `<tbody><tr><td style="padding:16px;color:var(--muted);font-size:12.5px;font-
+family:inherit;">No leads recorded for ${MONTH_ABBR[curM-1]} ${curY}.</td></tr></tbody>`;
+return;
+}
+let html = '<thead><tr><th>Date</th><th>Leads</th><th>Connected</th><th>Above 60
+Sec</th><th>Transferred</th><th>Accounts</th><th>Transfer to Account Ratio</th><th>Not
+Connected</th><th>Accounts</th><th>DIY</th></tr></thead><tbody>';
+for (const d of sortedDays){
+const a = days.get(d);
+const label = String(d).padStart(2,'0') + '-' + String(curM).padStart(2,'0') + '-' + curY;
+const ratio = a.transferred > 0 ? Math.round((a.accountsTransferred/a.transferred)*100) + '%' :
+'0%';
+html += `<tr>
+<td>${label}</td>
+<td>${a.leads}</td>
+<td>${a.connected}</td>
+<td>${a.above60}</td>
+<td>${a.transferred}</td>
+<td>${a.accountsTransferred}</td>
+<td>${ratio}</td>
+<td>${a.notConnected}</td>
+<td>${a.accountsNotConnected}</td>
+<td>${a.diyNotConnected}</td>
+</tr>`;
+}
+html += '</tbody>';
+el.innerHTML = html;
+}
+function computePeriodStats(rows, rangeStart, rangeEnd){
+const inRange = rows.filter(r=>{
+const dt = parseDMY(r['Date (IST)']);
+if (!dt) return false;
+const d = toDateObj(dt).getTime();
+return d >= rangeStart.getTime() && d <= rangeEnd.getTime();
+});
+const transferred = inRange.filter(r => r['Post Action'] === 'Transferred');
+const notTransferred = inRange.filter(r => r['Post Action'] !== 'Transferred');
+const tOpened = transferred.filter(isAccountOpened).length;
+const tNotOpened = transferred.length - tOpened;
+const ntOpened = notTransferred.filter(isAccountOpened).length;
+const ntNotOpened = notTransferred.length - ntOpened;
+const totOpened = tOpened + ntOpened;
+const totNotOpened = tNotOpened + ntNotOpened;
+return {
+transferred: { opened: tOpened, notOpened: tNotOpened, total: transferred.length },
+notTransferred: { opened: ntOpened, notOpened: ntNotOpened, total: notTransferred.length },
+total: { opened: totOpened, notOpened: totNotOpened, total: inRange.length }
+};
+}
+function pct(part, whole){
+if (!whole) return '0%';
+return Math.round((part/whole)*100) + '%';
+}
+function renderPeriodTable(tableId, stats){
+const rowsDef = [
+['Leads Transferred', stats.transferred],
+['Leads not Transferred', stats.notTransferred],
+['Total', stats.total]
+];
+let html = `<thead>
+<tr>
+<th class="rowlbl"></th>
+<th class="grp" colspan="3">In Numbers</th>
+<th class="grp divider-col" colspan="3">In %</th>
+</tr>
+<tr>
+<th class="rowlbl"></th>
+<th>Account Opened</th><th>Account not opened</th><th class="total-row">Total</th>
+<th class="divider-col">Account Opened</th><th>Account not opened</th><th class="total-
+row">Total</th>
+</tr>
+</thead><tbody>`;
+for (const [label, v] of rowsDef){
+const isTotalRow = label === 'Total';
+html += `<tr${isTotalRow?' style="background:rgba(91,141,239,.05);"':''}>
+<td class="rowlbl">${label}</td>
+<td>${v.opened}</td><td>${v.notOpened}</td><td class="total-row">${v.total}</td>
+<td class="divider-col">${pct(v.opened,v.total)}</td><td>${pct(v.notOpened,v.total)}</td><td
+class="total-row">100%</td>
+</tr>`;
+}
+html += '</tbody>';
+document.getElementById(tableId).innerHTML = html;
+}
+function buildPeriodSummary(rows){
+const { today, yearStart, monthStart, weekStart, lastDay } = getStandardPeriods();
+document.getElementById('ytd-range').textContent = `(${fmtDMY(yearStart)} →
+${fmtDMY(today)})`;
+document.getElementById('mtd-range').textContent = `(${fmtDMY(monthStart)} →
+${fmtDMY(today)})`;
+document.getElementById('wtd-range').textContent = `(${fmtDMY(weekStart)} →
+${fmtDMY(today)})`;
+document.getElementById('lastday-range').textContent = `(${fmtDMY(lastDay)})`;
+renderPeriodTable('period-table-ytd', computePeriodStats(rows, yearStart, today));
+renderPeriodTable('period-table-mtd', computePeriodStats(rows, monthStart, today));
+renderPeriodTable('period-table-wtd', computePeriodStats(rows, weekStart, today));
+renderPeriodTable('period-table-lastday', computePeriodStats(rows, lastDay, lastDay));
+buildMonthlyPerformanceTable(rows);
+buildFunnelSummary(rows);
+}
+function pct2(part, whole){
+if (!whole) return '0.00%';
+return (part/whole*100).toFixed(2) + '%';
+}
+function buildMonthlyPerformanceTable(rows){
+const months = new Map();
+for (const r of rows){
+const dt = parseDMY(r['Date (IST)']);
+if (!dt) continue;
+const key = dt.y + '-' + String(dt.m).padStart(2,'0');
+if (!months.has(key)){
+months.set(key, { y: dt.y, m: dt.m, leads:0, connected:0, transferred:0, accountsOpened:0 });
+}
+const agg = months.get(key);
+agg.leads++;
+const connected = r['Connected vs Not Connected'] === 'Connected';
+const transferred = r['Post Action'] === 'Transferred';
+if (connected) agg.connected++;
+if (transferred){
+agg.transferred++;
+if (isAccountOpened(r)) agg.accountsOpened++;
+}
+}
+const sortedKeys = [...months.keys()].sort();
+let html = `<thead><tr>
+<th>Month</th><th>Total Leads</th><th>Connected</th><th>Connectivity %</th>
+<th>Transferred To Agent</th>
+<th>Transferred Leads % (Total Leads / TTA)</th>
+<th>Transferred Leads % (Total Connected Leads / TTA)</th>
+<th>Account Opened</th>
+<th>Account Opening % (Transferred To Agent / A/C Open)</th>
+<th>Account Opening % (Total Connected Leads / A/C Open)</th>
+<th>Account Opening % (Total Leads / A/C Open)</th>
+</tr></thead><tbody>`;
+for (const key of sortedKeys){
+const a = months.get(key);
+const label = MONTH_ABBR[a.m-1] + '-' + String(a.y).slice(-2);
+html += `<tr>
+<td>${label}</td>
+<td>${a.leads}</td>
+<td>${a.connected}</td>
+<td>${pct2(a.connected, a.leads)}</td>
+<td>${a.transferred}</td>
+<td>${pct2(a.transferred, a.leads)}</td>
+<td>${pct2(a.transferred, a.connected)}</td>
+<td>${a.accountsOpened}</td>
+<td>${pct2(a.accountsOpened, a.transferred)}</td>
+<td>${pct2(a.accountsOpened, a.connected)}</td>
+<td>${pct2(a.accountsOpened, a.leads)}</td>
+</tr>`;
+}
+html += '</tbody>';
+document.getElementById('period-table-monthlyperf').innerHTML = html;
+}
+function isAdminOwner(r){ return String(r['Lead Owner']||'').trim() === 'ZohoFristine
+Implementation User'; }
+function isConnectedRow(r){ return r['Connected vs Not Connected'] === 'Connected'; }
+function isTransferredRow(r){ return r['Post Action'] === 'Transferred'; }
+// Bot Rejected segment = the Bot Remarks column contains "Bot Rejected" and/or "Not Qualified"
+// (matches "Bot Rejected", "Not Qualified", "Bot Rejected and Not Qualified", any
+capitalisation/spacing)
+const BOT_REJECTED_REMARKS = ['bot rejected','not qualified'];
+function isBotRejectedRow(r){
+const remark = String(r['Bot Remarks']||'').toLowerCase().replace(/[^a-z]+/g,' ').trim();
+return BOT_REJECTED_REMARKS.some(k => remark.includes(k));
+}
+function botRejectedAdmin(r){ return isConnectedRow(r) && isBotRejectedRow(r) &&
+isAdminOwner(r); }
+function botAttempts(r){ return Number(r['Greylabs Bot Attempt'])||0; }
+// Bot Not Connected segments (Account Summary funnel)
+function notConnUpTo5(r){ return !isConnectedRow(r) && botAttempts(r) <= 5; }
+function notConnOver5(r){ return !isConnectedRow(r) && botAttempts(r) > 5; }
+function notConnOver5User(r){ return notConnOver5(r) && !isAdminOwner(r); }
+function filterByDateRange(rows, start, end){
+return rows.filter(r=>{
+const dt = parseDMY(r['Date (IST)']);
+if (!dt) return false;
+const d = toDateObj(dt).getTime();
+return d >= start.getTime() && d <= end.getTime();
+});
+}
+function buildFunnelSummary(allRows){
+const { today, yearStart, monthStart, weekStart, lastDay } = getStandardPeriods();
+const periods = [
+{ key:'ytd', rows: filterByDateRange(allRows, yearStart, today) },
+{ key:'mtd', rows: filterByDateRange(allRows, monthStart, today) },
+{ key:'wtd', rows: filterByDateRange(allRows, weekStart, today) },
+{ key:'lastday', rows: filterByDateRange(allRows, lastDay, lastDay) }
+];
+const defs = [
+{ label:'Fresh Leads to Agent', lvl:0, fn: rs => rs.length, note:'Total leads in period' },
+{ label:'DIY done before bot connect', lvl:0,
+fn: rs => rs.filter(r=>r['DIY/Non DIY']==='Y' && !isConnectedRow(r)).length,
+note:'DIY = Y and Not Connected' },
+{ label:'Connected leads', lvl:0, fn: rs => rs.filter(isConnectedRow).length, note:'Connected' },
+{ label:'Bot Qualified', lvl:0, header:true },
+{ label:'Bot Qualified & Transferred Successfully', lvl:1,
+fn: rs => rs.filter(r=>isConnectedRow(r)&&isTransferredRow(r)&&!isAdminOwner(r)).length,
+note:'Connected, Transferred, Owner ≠ Admin' },
+{ label:'Accounts opened from above', lvl:2,
+fn: rs =>
+ength,
+rs.filter(r=>isConnectedRow(r)&&isTransferredRow(r)&&!isAdminOwner(r)&&isAccountOpened(r)).l
+convBaseFn: rs =>
+rs.filter(r=>isConnectedRow(r)&&isTransferredRow(r)&&!isAdminOwner(r)).length },
+{ label:'Conv %', lvl:2, isConv:true },
+{ label:'Bot Qualified but not Transferred Successfully', lvl:1,
+fn: rs => rs.filter(r=>isConnectedRow(r)&&isTransferredRow(r)&&isAdminOwner(r)).length,
+note:'Connected, Transferred, Owner = Admin' },
+{ label:'Accounts opened from above', lvl:2,
+fn: rs =>
+ngth,
+rs.filter(r=>isConnectedRow(r)&&isTransferredRow(r)&&isAdminOwner(r)&&isAccountOpened(r)).le
+convBaseFn: rs =>
+rs.filter(r=>isConnectedRow(r)&&isTransferredRow(r)&&isAdminOwner(r)).length },
+{ label:'Conv %', lvl:2, isConv:true },
+{ label:'Bot Qualified but Transferred Manually', lvl:1, blank:true },
+{ label:'Accounts opened from above', lvl:2, blank:true },
+{ label:'Conv %', lvl:2, blank:true },
+{ label:'Bot Rejected', lvl:0, fn: rs => rs.filter(isBotRejectedRow).length, note:'Bot Remarks
+contains "Bot Rejected" / "Not Qualified"' },
+{ label:'Leads assigned to Admin', lvl:1,
+fn: rs => rs.filter(botRejectedAdmin).length,
+note:'Connected, Bot Remarks contains "Bot Rejected" / "Not Qualified", Owner = ZohoFristine
+Implementation User' },
+{ label:'Accounts opened from above', lvl:2,
+fn: rs => rs.filter(r=>botRejectedAdmin(r)&&isAccountOpened(r)).length,
+convBaseFn: rs => rs.filter(botRejectedAdmin).length },
+{ label:'Conv %', lvl:2, isConv:true },
+{ label:'Bot Connected but Not Qualified', lvl:0,
+fn: rs => rs.filter(isConnectedRow).length,
+note:'Connected' },
+{ label:'Less than 5 attempts or T+1 day', lvl:1,
+fn: rs => rs.filter(r=>isConnectedRow(r)&&isAdminOwner(r)&&botAttempts(r)<5).length,
+note:'Connected, Owner = ZohoFristine Implementation User, Bot Call Attempts < 5' },
+{ label:'Accounts opened from above', lvl:2,
+fn: rs =>
+rs.filter(r=>isConnectedRow(r)&&isAdminOwner(r)&&botAttempts(r)<5&&isAccountOpened(r)).leng
+th,
+convBaseFn: rs =>
+rs.filter(r=>isConnectedRow(r)&&isAdminOwner(r)&&botAttempts(r)<5).length },
+{ label:'Conv %', lvl:2, isConv:true },
+{ label:'More than 5 attempts or post T+ 1 day', lvl:1, blank:true },
+{ label:'Leads assigned to Users', lvl:2, blank:true },
+{ label:'Accounts opened from above', lvl:3, blank:true },
+{ label:'Conv %', lvl:3, blank:true },
+{ label:'Leads not assigned to user', lvl:1, blank:true },
+{ label:'Accounts opened from above', lvl:2, blank:true },
+{ label:'Conv %', lvl:2, blank:true },
+// ---- Bot Not Connected ----
+{ label:'Bot Not Connected', lvl:0, fn: rs => rs.filter(r=>!isConnectedRow(r)).length, note:'Not
+Connected' },
+{ label:'Less than 5 attempts or T+1 day', lvl:1,
+fn: rs => rs.filter(notConnUpTo5).length,
+note:'Not Connected, Bot Call Attempts ≤ 5' },
+{ label:'More than 5 attempts or post T+ 1 day', lvl:1,
+fn: rs => rs.filter(notConnOver5).length,
+note:'Not Connected, Bot Call Attempts > 5' },
+{ label:'Leads assigned to Users', lvl:2,
+fn: rs => rs.filter(notConnOver5User).length,
+note:'Not Connected, Bot Call Attempts > 5, Owner ≠ ZohoFristine Implementation User' },
+{ label:'Accounts opened from above', lvl:3,
+fn: rs => rs.filter(r=>notConnOver5User(r)&&isAccountOpened(r)).length,
+convBaseFn: rs => rs.filter(notConnOver5User).length },
+{ label:'Conv %', lvl:3, isConv:true }
+];
+let html = '<thead><tr><th
+class="rowlbl">Metric</th><th>YTD</th><th>MTD</th><th>WTD</th><th>Last
+Day</th></tr></thead><tbody>';
+let prevDef = null;
+for (const def of defs){
+if (def.header){
+html += `<tr style="background:#1a2338;"><td colspan="5" style="color:var(--muted); font-
+weight:700; font-size:11.5px;">${def.label}</td></tr>`;
+prevDef = def;
+continue;
+}
+const indent = 14 + def.lvl*20;
+const titleAttr = def.note ? ` title="${def.note.replace(/"/g,'&quot;')}"` : '';
+if (def.blank){
+html += `<tr><td class="rowlbl" style="padding-left:${indent}px;">${def.label}</td><td>—
+</td><td>—</td><td>—</td><td>—</td></tr>`;
+prevDef = def;
+continue;
+}
+if (def.isConv){
+const cells = periods.map(p => {
+const accCount = prevDef.fn(p.rows);
+const base = prevDef.convBaseFn(p.rows);
+return base ? ((accCount/base)*100).toFixed(2)+'%' : '—';
+});
+html += `<tr><td class="rowlbl" style="padding-
+left:${indent}px;">${def.label}</td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`;
+prevDef = def;
+continue;
+}
+const cells = periods.map(p => def.fn(p.rows));
+html += `<tr><td class="rowlbl" style="padding-
+left:${indent}px;"${titleAttr}>${def.label}</td>${cells.map(c=>`<td>${c}</td>`).join('')}</tr>`;
+prevDef = def;
+}
+html += '</tbody>';
+document.getElementById('period-table-funnel').innerHTML = html;
+}
+// ---------- Table rendering ----------
+function renderTable(tab){
+if (!state.results) return;
+const map = {
+final: state.results.finalRows,
+leads: state.results.leadsClean,
+crm: state.results.crmClean,
+vendor: state.results.vendorClean
+};
+const rows = map[tab];
+const el = document.getElementById('tableview');
+if (rows === null || rows === undefined){
+el.innerHTML = '<p style="padding:16px;color:var(--muted)">Only the Final Raw Data is saved
+between visits. The cleaned Leads, CRM and Vendor tables appear right after a merge is run.</p>';
+return;
+}
+if (!rows.length){ el.innerHTML = '<p style="padding:16px;color:var(--muted)">No rows.</p>';
+return; }
+const headers = Object.keys(rows[0]);
+const maxRows = 500;
+let html = '<table><thead><tr>' + headers.map(h=>`<th>${h}</th>`).join('') +
+'</tr></thead><tbody>';
+for (let i=0;i<Math.min(rows.length,maxRows);i++){
+html += '<tr>' + headers.map(h=>`<td>${rows[i][h] ?? ''}</td>`).join('') + '</tr>';
+}
+html += '</tbody></table>';
+if (rows.length > maxRows) html += `<p style="padding:10px;color:var(--muted);font-
+size:11px;">Showing first ${maxRows} of ${rows.length} rows. Full data is in the downloaded
+file.</p>`;
+el.innerHTML = html;
+}
+document.querySelectorAll('.tab').forEach(tab=>{
+tab.addEventListener('click', ()=>{
+document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+tab.classList.add('active');
+renderTable(tab.dataset.tab);
+});
+});
+document.getElementById('btn-run').addEventListener('click', processAll);
+// ---------- Downloads ----------
+async function saveFile(filename, blob){
+let dl = null;
+try{ if (window.claude && typeof window.claude.use === 'function') dl = await
+window.claude.use('downloads'); }catch(e){ dl = null; }
+if (dl){
+try{ await dl.save({ filename, data: blob }); return true; }
+catch(err){ if (err && err.code === 'declined') return false; throw err; }
+}
+const a = document.createElement('a');
+a.href = URL.createObjectURL(blob);
+a.download = filename;
+document.body.appendChild(a); a.click(); a.remove();
+setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+return true;
+}
+document.getElementById('btn-download').addEventListener('click', async () => {
+if (!state.results) return;
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.results.finalRows),
+'Final_Raw_Data');
+if (state.results.leadsClean) XLSX.utils.book_append_sheet(wb,
+XLSX.utils.json_to_sheet(state.results.leadsClean), 'Leads_Clean');
+if (state.results.crmClean) XLSX.utils.book_append_sheet(wb,
+XLSX.utils.json_to_sheet(state.results.crmClean), 'CRM_Clean');
+if (state.results.vendorClean) XLSX.utils.book_append_sheet(wb,
+XLSX.utils.json_to_sheet(state.results.vendorClean), 'Vendor_Clean');
+const out = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+const blob = new Blob([out], { type:'application/vnd.openxmlformats-
+officedocument.spreadsheetml.sheet' });
+try{
+const ok = await saveFile('merged_raw_data.xlsx', blob);
+if (ok) log('Downloaded merged_raw_data.xlsx. Keep this file — upload it next time as the
+"Previous Merged Raw File" to keep the 45-day rolling freeze going.', 'ok');
+}catch(err){ log('Download failed: ' + (err.message || err.code), 'bad'); }
+});
+document.getElementById('btn-download-csv').addEventListener('click', async () => {
+if (!state.results) return;
+const ws = XLSX.utils.json_to_sheet(state.results.finalRows);
+const csv = XLSX.utils.sheet_to_csv(ws);
+try{
+const ok = await saveFile('final_raw_data.csv', new Blob([csv], {type:'text/csv'}));
+if (ok) log('Downloaded final_raw_data.csv.', 'ok');
+}catch(err){ log('Download failed: ' + (err.message || err.code), 'bad'); }
+});
+// ---------- Small download button on every data table ----------
+function safeName(txt){
+return String(txt||'table').replace(/[^\p{L}\p{N}]+/gu,'_').replace(/^_+|_+$/g,'').slice(0,60) ||
+'table';
+}
+async function downloadSheet(ws, name){
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, name.slice(0,31));
+const out = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+const blob = new Blob([out], { type:'application/vnd.openxmlformats-
+officedocument.spreadsheetml.sheet' });
+try{
+const ok = await saveFile(name + '.xlsx', blob);
+if (ok) log(`Downloaded ${name}.xlsx.`, 'ok');
+}catch(err){ log('Download failed: ' + (err.message || err.code), 'bad'); }
+}
+function addTableDownloadButtons(){
+document.querySelectorAll('.tableview table[id]').forEach(table => {
+const card = table.closest('.card');
+const h4 = card && card.querySelector('h4');
+if (!h4 || h4.querySelector('.dl-btn')) return;
+const btn = document.createElement('button');
+btn.className = 'dl-btn';
+btn.type = 'button';
+btn.textContent = '⬇ Download';
+btn.title = 'Download this table (.xlsx)';
+btn.addEventListener('click', () => {
+const t = document.getElementById(table.id);
+if (!t || !t.rows.length){ log('That table has no data to download yet.', 'warn'); return; }
+const name = safeName(h4.textContent.replace(btn.textContent,''));
+downloadSheet(XLSX.utils.table_to_sheet(t), name);
+});
+h4.appendChild(btn);
+});
+}
+addTableDownloadButtons();
+document.getElementById('btn-dl-current').addEventListener('click', () => {
+if (!state.results) return;
+const active = document.querySelector('.tab.active');
+const key = active ? active.dataset.tab : 'final';
+const map = { final: state.results.finalRows, leads: state.results.leadsClean, crm:
+state.results.crmClean, vendor: state.results.vendorClean };
+const names = { final:'Final_Raw_Data', leads:'Leads_Clean', crm:'CRM_Clean',
+vendor:'Vendor_Clean' };
+const rows = map[key];
+if (!rows || !rows.length){ log('This table is only available right after a merge is run.', 'warn');
+return; }
+downloadSheet(XLSX.utils.json_to_sheet(rows), names[key]);
+});
+// ---------- Start: load the last saved merge (no recompute) ----------
+initPersistence();
+})();
+</script>
+</body>
+</html>
